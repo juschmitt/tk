@@ -15,7 +15,7 @@ pub fn start_oauth_process() -> Result<(), OAuthError> {
         "WxRy01)gJDnffZ#R)_Bza2230zY5T7B&",
         "https://ticktick.com/oauth/authorize",
         "https://ticktick.com/oauth/token",
-        "http://localhost:8080"
+        "http://localhost:8080",
     );
 
     println!("Visit this URL: {}", authentication_url(&oauth_client));
@@ -50,36 +50,36 @@ fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenRe
 
 fn await_code() -> Result<(String, String), OAuthError> {
     // start an tcp listener to handle redirect
-    let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
-    for stream in listener.incoming() {
-        return if let Ok(mut stream) = stream {
-            let code;
-            let state;
-            {
-                let mut reader = BufReader::new(&stream);
+    let listener = TcpListener::bind("127.0.0.1:8080")?;
+    if let Some(Ok(mut stream)) = listener.incoming().next() {
+        let (code, state) = {
+            let mut reader = BufReader::new(&stream);
 
-                let mut request_line = String::new();
-                reader.read_line(&mut request_line).unwrap();
-                let redirect_url = request_line.split_whitespace().nth(1).unwrap().split("?").nth(1).unwrap();
-                let query_string: RedirectQueryString = serde_qs::from_str(redirect_url).unwrap();
-                code = query_string.code;
-                state = query_string.state;
-            }
-            // write into browser
-            let message = "Go back to the terminal! :)";
-            let response = format!(
-                "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-                message.len(),
-                message
-            );
-            write!(stream, "{}", response).unwrap();
+            let mut request_line = String::new();
+            reader.read_line(&mut request_line).unwrap();
+            let redirect_url = if let Some(s) = request_line.split_whitespace().nth(1) {
+                if let Some(s) = s.split('?').nth(1) {
+                    Ok(s)
+                } else {
+                    Err(OAuthError::RedirectParsing)
+                }
+            } else { Err(OAuthError::RedirectParsing) }?;
+            let query_string: RedirectQueryString = serde_qs::from_str(redirect_url).unwrap();
+            (query_string.code, query_string.state)
+        };
+        // write into browser
+        let message = "Go back to the terminal! :)";
+        let response = format!(
+            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
+            message.len(),
+            message
+        );
+        write!(stream, "{}", response).unwrap();
 
-            Ok((code, state))
-        } else {
-            Err(OAuthError::TcpError)
-        }
+        Ok((code, state))
+    } else {
+        Err(OAuthError::Tcp)
     }
-    return Err(OAuthError::TcpError);
 }
 
 fn authentication_url(oauth_client: &OAuthClient) -> String {
