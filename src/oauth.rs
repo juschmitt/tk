@@ -12,7 +12,7 @@ mod access_token_response;
 mod oauth_client;
 mod oauth_error;
 
-pub fn start_oauth_process(client_id: &str, client_secret: &str) -> Result<String, OAuthError> {
+pub fn authenticate(client_id: &str, client_secret: &str) -> Result<String, OAuthError> {
     println!("Starting OAuth process...");
     let oauth_client = OAuthClient::new(
         client_id,//"O2Mbd1j8nkD7NvNS1R",
@@ -22,7 +22,7 @@ pub fn start_oauth_process(client_id: &str, client_secret: &str) -> Result<Strin
         "http://localhost:8080",
     );
 
-    println!("Visit this URL: {}", authentication_url(&oauth_client));
+    println!("Open the following URL in a browser\n{}", authentication_url(&oauth_client));
     let redirect_query_string = await_redirect()?;
     if redirect_query_string.state != oauth_client.state {
         return Err(OAuthError::State);
@@ -50,12 +50,11 @@ fn exchange_code(
         .post(oauth_client.token_url)
         .basic_auth(oauth_client.client_id, Some(oauth_client.client_secret))
         .form(&form_data)
-        .send()
-        .unwrap();
+        .send()?;
 
     let body = resp.text()?;
     println!("Body: {:?}", body);
-    let response: AccessTokenResponse = serde_json::from_str(&body).unwrap();
+    let response: AccessTokenResponse = serde_json::from_str(&body)?;
     println!("Response: {:?}", response);
     Ok(response)
 }
@@ -65,13 +64,13 @@ fn await_redirect() -> Result<RedirectQueryString, OAuthError> {
     if let Some(Ok(mut stream)) = listener.incoming().next() {
         let redirect_query_string = read_redirect_query_string(&stream)?;
 
-        let message = "Go back to the terminal! :)";
+        let message = "Go back to the terminal! You can close the browser tab.";
         let response = format!(
             "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
             message.len(),
             message
         );
-        write!(stream, "{}", response).unwrap();
+        write!(stream, "{}", response)?;
 
         Ok(redirect_query_string)
     } else {
@@ -83,7 +82,7 @@ fn read_redirect_query_string(stream: &TcpStream) -> Result<RedirectQueryString,
     let mut reader = BufReader::new(stream);
 
     let mut request_line = String::new();
-    reader.read_line(&mut request_line).unwrap();
+    reader.read_line(&mut request_line)?;
     let redirect_url = if let Some(s) = request_line.split_whitespace().nth(1) {
         if let Some(s) = s.split('?').nth(1) {
             Ok(s)

@@ -10,7 +10,11 @@ fn main() -> io::Result<()> {
             Commands::Auth(args) => {
                 match args.command {
                     AuthCommands::Login { client_id, client_secret } => {
-                        oauth::start_oauth_process(client_id.as_str(), client_secret.as_str()).unwrap();
+                        let auth_token = oauth::authenticate(client_id.as_str(), client_secret.as_str());
+                        match auth_token {
+                            Ok(auth_token) => { store_auth_token(auth_token); }
+                            Err(error) => { eprintln!("Authentication failed! Cause: {:?}", error) }
+                        }
                     }
                     AuthCommands::Logout => {}
                     AuthCommands::Token => {}
@@ -28,4 +32,8 @@ fn main() -> io::Result<()> {
             Commands::Task => {}
         }
     Ok(())
+}
+
+fn store_auth_token(auth_token: String) {
+    todo!("Store the auth token in a file");
 }
