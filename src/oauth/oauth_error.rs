@@ -6,6 +6,7 @@ pub enum OAuthError {
     Http,
     ResponseParsing,
     RedirectParsing,
+    State,
 }
 
 impl From<reqwest::Error> for OAuthError {

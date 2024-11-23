@@ -1,4 +1,5 @@
 use std::{net::TcpListener, io::{Write, BufReader, BufRead}};
+use std::net::TcpStream;
 use serde::{Serialize, Deserialize};
 use crate::oauth::access_token_response::AccessTokenResponse;
 use crate::oauth::oauth_client::OAuthClient;
@@ -8,7 +9,7 @@ mod oauth_error;
 mod access_token_response;
 mod oauth_client;
 
-pub fn start_oauth_process() -> Result<(), OAuthError> {
+pub fn start_oauth_process() -> Result<String, OAuthError> {
     println!("Starting OAuth process...");
     let oauth_client = OAuthClient::new(
         "O2Mbd1j8nkD7NvNS1R",
@@ -19,10 +20,12 @@ pub fn start_oauth_process() -> Result<(), OAuthError> {
     );
 
     println!("Visit this URL: {}", authentication_url(&oauth_client));
-    let (code, _) = await_code()?;
-    let _token_response = exchange_code(&oauth_client, &code)?;
+    let redirect_query_string = await_redirect()?;
+    if redirect_query_string.state != oauth_client.state { return Err(OAuthError::State)}
 
-    Ok(())
+    let token_response = exchange_code(&oauth_client, &redirect_query_string.code)?;
+
+    Ok(token_response.access_token)
 }
 
 fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenResponse, OAuthError> {
@@ -48,26 +51,11 @@ fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenRe
     Ok(response)
 }
 
-fn await_code() -> Result<(String, String), OAuthError> {
-    // start an tcp listener to handle redirect
+fn await_redirect() -> Result<RedirectQueryString, OAuthError> {
     let listener = TcpListener::bind("127.0.0.1:8080")?;
     if let Some(Ok(mut stream)) = listener.incoming().next() {
-        let (code, state) = {
-            let mut reader = BufReader::new(&stream);
+        let redirect_query_string = read_redirect_query_string(&stream)?;
 
-            let mut request_line = String::new();
-            reader.read_line(&mut request_line).unwrap();
-            let redirect_url = if let Some(s) = request_line.split_whitespace().nth(1) {
-                if let Some(s) = s.split('?').nth(1) {
-                    Ok(s)
-                } else {
-                    Err(OAuthError::RedirectParsing)
-                }
-            } else { Err(OAuthError::RedirectParsing) }?;
-            let query_string: RedirectQueryString = serde_qs::from_str(redirect_url).unwrap();
-            (query_string.code, query_string.state)
-        };
-        // write into browser
         let message = "Go back to the terminal! :)";
         let response = format!(
             "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
@@ -76,10 +64,26 @@ fn await_code() -> Result<(String, String), OAuthError> {
         );
         write!(stream, "{}", response).unwrap();
 
-        Ok((code, state))
+        Ok(redirect_query_string)
     } else {
         Err(OAuthError::Tcp)
     }
+}
+
+fn read_redirect_query_string(stream: &TcpStream) -> Result<RedirectQueryString, OAuthError> {
+    let mut reader = BufReader::new(stream);
+
+    let mut request_line = String::new();
+    reader.read_line(&mut request_line).unwrap();
+    let redirect_url = if let Some(s) = request_line.split_whitespace().nth(1) {
+        if let Some(s) = s.split('?').nth(1) {
+            Ok(s)
+        } else {
+            Err(OAuthError::RedirectParsing)
+        }
+    } else { Err(OAuthError::RedirectParsing) }?;
+    let query_string: RedirectQueryString = serde_qs::from_str(redirect_url).unwrap();
+    Ok(query_string)
 }
 
 fn authentication_url(oauth_client: &OAuthClient) -> String {
