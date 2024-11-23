@@ -1,6 +1,7 @@
 use std::{error::Error, net::TcpListener, io::{BufReader, BufRead, Write}};
 
 use oauth2::{basic::BasicClient, ClientSecret, AuthUrl, ClientId, TokenUrl, RedirectUrl, CsrfToken, Scope, AuthorizationCode};
+use reqwest::Url;
 
 fn main() -> Result<(), Box<dyn Error>> {
     println!("Starting OAuth process...");
@@ -38,13 +39,25 @@ fn main() -> Result<(), Box<dyn Error>> {
 
                 let mut request_line = String::new();
                 reader.read_line(&mut request_line).unwrap();
-                let parts: Vec<&str> = request_line.split_whitespace().map(str::trim).collect();
+                let redirect_url= request_line.split_whitespace().nth(1).unwrap();
+                let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
 
-                let code1 = parts.get(1).unwrap().split('=').next().unwrap();
-                code = AuthorizationCode::new(code1.to_string());
+                let (_, code_value) = url
+                    .query_pairs()
+                    .find(|pair| {
+                        let &(ref key, _) = pair;
+                        key == "code"
+                    })
+                    .unwrap();
+                code = AuthorizationCode::new(code_value.into_owned());
 
-                let state1 = parts.get(2).unwrap().split('=').next().unwrap();
-                state = CsrfToken::new(state1.to_string());
+                    let (_, state_value) = url
+                    .query_pairs()
+                    .find(|pair| {
+                            let &(ref key, _) = pair;
+                            key == "state"
+                    }).unwrap();
+                state = CsrfToken::new(state_value.to_string());
             }
             
             // write into browser
