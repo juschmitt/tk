@@ -1,7 +1,11 @@
 use std::{net::TcpListener, io::{Write, BufReader, BufRead}};
-
+use serde::{Serialize, Deserialize};
 use reqwest::Url;
+use crate::oauth::access_token_response::AccessTokenResponse;
+use crate::oauth::oauth_error::OAuthError;
 
+mod oauth_error;
+mod access_token_response;
 
 pub fn start_oauth_process() -> Result<(), OAuthError> {
     println!("Starting OAuth process...");
@@ -11,18 +15,29 @@ pub fn start_oauth_process() -> Result<(), OAuthError> {
     let tt_auth_url = "https://ticktick.com/oauth/authorize";
     let tt_token_url = "https://ticktick.com/oauth/token";
 
-   
     let scopes = vec!["tasks:read", "tasks:write"];
+    let state = "1234567890";
+    let redirect_uri = "http://localhost:8080";
+    let response_type = "code";
 
-    let authorize_url = "https://something.com";
+    let authorize_url = format!(
+        "{}?scope={}&client_id={}&state={}&redirect_uri={}&response_type={}",
+        tt_auth_url,
+        &scopes.join("%20"),
+        tt_client_id,
+        state,
+        redirect_uri,
+        response_type,
+    );
 
     println!("Visit this URL: {}", authorize_url);
-    let (code, state) = await_code()?;
-    exchange_code(tt_token_url, &code, tt_client_id, tt_client_secret, tt_auth_url, tt_token_url, scopes).unwrap();
+    let (code, _) = await_code()?;
+    let token_response = exchange_code(tt_token_url, &code, tt_client_id, tt_client_secret, scopes)?;
+
     Ok(())
 }
 
-fn exchange_code<'resp>(url: &str, code: &str, tt_client_id: &str, tt_client_secret: &str, tt_auth_url: &str, tt_token_url: &str, scopes: Vec<&str>) -> Result<&'resp str, OAuthError> {
+fn exchange_code(url: &str, code: &str, tt_client_id: &str, tt_client_secret: &str, scopes: Vec<&str>) -> Result<AccessTokenResponse, OAuthError> {
     let client = reqwest::blocking::Client::new();
     let form = [
         ("client_id", tt_client_id),
@@ -38,9 +53,10 @@ fn exchange_code<'resp>(url: &str, code: &str, tt_client_id: &str, tt_client_sec
         .form(&form)
         .send().unwrap();
 
-    let body = resp.text().unwrap();
-    println!("Response: {}", body);
-    Ok("ok")
+    let body = resp.text()?;
+    let response: AccessTokenResponse = serde_json::from_str(&body)?;
+    println!("Response: {:?}", response);
+    Ok(response)
 }
 
 fn await_code() -> Result<(String, String), OAuthError> {
@@ -96,9 +112,4 @@ fn await_code() -> Result<(String, String), OAuthError> {
         }
     }
     return Err(OAuthError::TcpError);
-}
-
-#[derive(Debug)]
-pub enum OAuthError {
-    TcpError,
 }
