@@ -12,11 +12,11 @@ mod access_token_response;
 mod oauth_client;
 mod oauth_error;
 
-pub fn start_oauth_process() -> Result<String, OAuthError> {
+pub fn start_oauth_process(client_id: &str, client_secret: &str) -> Result<String, OAuthError> {
     println!("Starting OAuth process...");
     let oauth_client = OAuthClient::new(
-        "O2Mbd1j8nkD7NvNS1R",
-        "WxRy01)gJDnffZ#R)_Bza2230zY5T7B&",
+        client_id,//"O2Mbd1j8nkD7NvNS1R",
+        client_secret,//"WxRy01)gJDnffZ#R)_Bza2230zY5T7B&",
         "https://ticktick.com/oauth/authorize",
         "https://ticktick.com/oauth/token",
         "http://localhost:8080",

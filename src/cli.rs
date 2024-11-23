@@ -5,11 +5,11 @@ use clap::{Args, Parser, Subcommand};
 #[command(about = "Unofficial ticktick.com CLI")]
 pub(crate) struct Cli {
     #[command(subcommand)]
-    command: Commands
+    pub command: Commands
 }
 
 #[derive(Debug, Subcommand)]
-enum Commands {
+pub enum Commands {
     /// Login, logout, and manage tokens
     Auth(AuthArgs),
     /// Manage projects
@@ -19,19 +19,19 @@ enum Commands {
 }
 
 #[derive(Debug, Args)]
-struct AuthArgs {
+pub struct AuthArgs {
     #[command(subcommand)]
-    command: AuthCommands,
+    pub(crate) command: AuthCommands,
 }
 
 #[derive(Debug, Subcommand)]
-enum AuthCommands {
+pub enum AuthCommands {
     /// Login to ticktick.com and store the token for future requests
     Login {
         #[arg(short, long, required = true)]
         client_id: String,
         #[arg(short, long, required = true)]
-        client_secret: String 
+        client_secret: String
     },
     /// Logout and remove the stored token
     Logout,
@@ -40,13 +40,13 @@ enum AuthCommands {
 }
 
 #[derive(Debug, Args)]
-struct ProjectArgs {
+pub struct ProjectArgs {
     #[command(subcommand)]
-    command: ProjectCommands,
+    pub command: ProjectCommands,
 }
 
 #[derive(Debug, Subcommand)]
-enum ProjectCommands {
+pub enum ProjectCommands {
     /// List all projects
     List,
     /// View a project and its tasks
