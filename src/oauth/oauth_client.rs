@@ -46,16 +46,12 @@ impl <'oauth> Scopes<'oauth> {
             scopes
         }
     }
-}
 
-impl From<&Scopes<'_>> for String {
-    fn from(value: &Scopes) -> Self {
-        value.scopes.join("%20")
+    pub fn url_encoded(&self) -> String {
+        self.scopes.join("%20")
     }
-}
 
-impl Display for Scopes<'_> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", String::from(self))
+    pub fn join_whitespace(&self) -> String {
+        self.scopes.join(" ")
     }
 }

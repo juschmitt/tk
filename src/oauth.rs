@@ -34,7 +34,7 @@ fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenRe
         ("code", code),
         ("grant_type", "authorization_code"),
         ("redirect_uri", oauth_client.redirect_uri),
-        ("scope", &String::from(&oauth_client.scopes)),
+        ("scope", &oauth_client.scopes.join_whitespace()),
     ];
     let resp = client
         .post(oauth_client.token_url)
@@ -43,7 +43,8 @@ fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenRe
         .send().unwrap();
 
     let body = resp.text()?;
-    let response: AccessTokenResponse = serde_json::from_str(&body)?;
+    println!("Body: {:?}", body);
+    let response: AccessTokenResponse = serde_json::from_str(&body).unwrap();
     println!("Response: {:?}", response);
     Ok(response)
 }
@@ -60,26 +61,10 @@ fn await_code() -> Result<(String, String), OAuthError> {
 
                 let mut request_line = String::new();
                 reader.read_line(&mut request_line).unwrap();
-                let redirect_url = request_line.split_whitespace().nth(1).unwrap();
-                let url = Url::parse(&("http://localhost".to_string() + redirect_url)).unwrap();
-
-                let (_, code_value) = url
-                    .query_pairs()
-                    .find(|pair| {
-                        let &(ref key, _) = pair;
-                        key == "code"
-                    })
-                    .unwrap();
-                code = code_value.into_owned();
-
-                let (_, state_value) = url
-                    .query_pairs()
-                    .find(|pair| {
-                        let &(ref key, _) = pair;
-                        key == "state"
-                    })
-                    .unwrap();
-                state = state_value.into_owned();
+                let redirect_url = request_line.split_whitespace().nth(1).unwrap().split("?").nth(1).unwrap();
+                let query_string: RedirectQueryString = serde_qs::from_str(redirect_url).unwrap();
+                code = query_string.code;
+                state = query_string.state;
             }
             // write into browser
             let message = "Go back to the terminal! :)";
@@ -88,13 +73,8 @@ fn await_code() -> Result<(String, String), OAuthError> {
                 message.len(),
                 message
             );
-            stream.write_all(response.as_bytes()).unwrap();
+            write!(stream, "{}", response).unwrap();
 
-            println!("Authorization code: {}", code);
-            println!(
-                "State: Got {}",
-                state
-            );
             Ok((code, state))
         } else {
             Err(OAuthError::TcpError)
@@ -107,10 +87,16 @@ fn authentication_url(oauth_client: &OAuthClient) -> String {
     format!(
         "{}?scope={}&client_id={}&state={}&redirect_uri={}&response_type={}",
         oauth_client.auth_url,
-        oauth_client.scopes,
+        oauth_client.scopes.url_encoded(),
         oauth_client.client_id,
         oauth_client.state,
         oauth_client.redirect_uri,
         oauth_client.response_type,
     )
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct RedirectQueryString {
+    code: String,
+    state: String,
 }
