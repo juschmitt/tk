@@ -21,7 +21,7 @@ pub fn start_oauth_process() -> Result<(), OAuthError> {
 
     println!("Visit this URL: {}", authentication_url(&oauth_client));
     let (code, _) = await_code()?;
-    let token_response = exchange_code(&oauth_client, &code)?;
+    let _token_response = exchange_code(&oauth_client, &code)?;
 
     Ok(())
 }
