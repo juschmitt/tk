@@ -1,6 +1,5 @@
 use std::{net::TcpListener, io::{Write, BufReader, BufRead}};
 use serde::{Serialize, Deserialize};
-use reqwest::Url;
 use crate::oauth::access_token_response::AccessTokenResponse;
 use crate::oauth::oauth_client::OAuthClient;
 use crate::oauth::oauth_error::OAuthError;
