@@ -2,55 +2,44 @@ use std::{net::TcpListener, io::{Write, BufReader, BufRead}};
 use serde::{Serialize, Deserialize};
 use reqwest::Url;
 use crate::oauth::access_token_response::AccessTokenResponse;
+use crate::oauth::oauth_client::OAuthClient;
 use crate::oauth::oauth_error::OAuthError;
 
 mod oauth_error;
 mod access_token_response;
+mod oauth_client;
 
 pub fn start_oauth_process() -> Result<(), OAuthError> {
     println!("Starting OAuth process...");
-    let tt_client_id = "O2Mbd1j8nkD7NvNS1R";
-    let tt_client_secret = "WxRy01)gJDnffZ#R)_Bza2230zY5T7B&";
-
-    let tt_auth_url = "https://ticktick.com/oauth/authorize";
-    let tt_token_url = "https://ticktick.com/oauth/token";
-
-    let scopes = vec!["tasks:read", "tasks:write"];
-    let state = "1234567890";
-    let redirect_uri = "http://localhost:8080";
-    let response_type = "code";
-
-    let authorize_url = format!(
-        "{}?scope={}&client_id={}&state={}&redirect_uri={}&response_type={}",
-        tt_auth_url,
-        &scopes.join("%20"),
-        tt_client_id,
-        state,
-        redirect_uri,
-        response_type,
+    let oauth_client = OAuthClient::new(
+        "O2Mbd1j8nkD7NvNS1R",
+        "WxRy01)gJDnffZ#R)_Bza2230zY5T7B&",
+        "https://ticktick.com/oauth/authorize",
+        "https://ticktick.com/oauth/token",
+        "http://localhost:8080"
     );
 
-    println!("Visit this URL: {}", authorize_url);
+    println!("Visit this URL: {}", authentication_url(&oauth_client));
     let (code, _) = await_code()?;
-    let token_response = exchange_code(tt_token_url, &code, tt_client_id, tt_client_secret, scopes)?;
+    let token_response = exchange_code(&oauth_client, &code)?;
 
     Ok(())
 }
 
-fn exchange_code(url: &str, code: &str, tt_client_id: &str, tt_client_secret: &str, scopes: Vec<&str>) -> Result<AccessTokenResponse, OAuthError> {
+fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenResponse, OAuthError> {
     let client = reqwest::blocking::Client::new();
-    let form = [
-        ("client_id", tt_client_id),
-        ("client_secret", tt_client_secret),
+    let form_data = [
+        ("client_id", oauth_client.client_id),
+        ("client_secret", oauth_client.client_secret),
         ("code", code),
         ("grant_type", "authorization_code"),
-        ("redirect_uri", "http://localhost:8080"),
-        ("scope", &scopes.join(" ")),
+        ("redirect_uri", oauth_client.redirect_uri),
+        ("scope", &String::from(&oauth_client.scopes)),
     ];
     let resp = client
-        .post(url)
-        .basic_auth(tt_client_id, Some(tt_client_secret))
-        .form(&form)
+        .post(oauth_client.token_url)
+        .basic_auth(oauth_client.client_id, Some(oauth_client.client_secret))
+        .form(&form_data)
         .send().unwrap();
 
     let body = resp.text()?;
@@ -63,7 +52,7 @@ fn await_code() -> Result<(String, String), OAuthError> {
     // start an tcp listener to handle redirect
     let listener = TcpListener::bind("127.0.0.1:8080").unwrap();
     for stream in listener.incoming() {
-        if let Ok(mut stream) = stream {
+        return if let Ok(mut stream) = stream {
             let code;
             let state;
             {
@@ -106,10 +95,22 @@ fn await_code() -> Result<(String, String), OAuthError> {
                 "State: Got {}",
                 state
             );
-            return Ok((code, state));
+            Ok((code, state))
         } else {
-            return Err(OAuthError::TcpError);
+            Err(OAuthError::TcpError)
         }
     }
     return Err(OAuthError::TcpError);
+}
+
+fn authentication_url(oauth_client: &OAuthClient) -> String {
+    format!(
+        "{}?scope={}&client_id={}&state={}&redirect_uri={}&response_type={}",
+        oauth_client.auth_url,
+        oauth_client.scopes,
+        oauth_client.client_id,
+        oauth_client.state,
+        oauth_client.redirect_uri,
+        oauth_client.response_type,
+    )
 }
