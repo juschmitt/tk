@@ -2,5 +2,5 @@
 mod oauth;
 
 fn main() {
-    oauth::start_oauth_process().unwrap();
+    let accessToken = oauth::start_oauth_process().unwrap();
 }

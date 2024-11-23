@@ -1,13 +1,16 @@
-use std::{net::TcpListener, io::{Write, BufReader, BufRead}};
-use std::net::TcpStream;
-use serde::{Serialize, Deserialize};
 use crate::oauth::access_token_response::AccessTokenResponse;
 use crate::oauth::oauth_client::OAuthClient;
 use crate::oauth::oauth_error::OAuthError;
+use serde::{Deserialize, Serialize};
+use std::net::TcpStream;
+use std::{
+    io::{BufRead, BufReader, Write},
+    net::TcpListener,
+};
 
-mod oauth_error;
 mod access_token_response;
 mod oauth_client;
+mod oauth_error;
 
 pub fn start_oauth_process() -> Result<String, OAuthError> {
     println!("Starting OAuth process...");
@@ -21,14 +24,19 @@ pub fn start_oauth_process() -> Result<String, OAuthError> {
 
     println!("Visit this URL: {}", authentication_url(&oauth_client));
     let redirect_query_string = await_redirect()?;
-    if redirect_query_string.state != oauth_client.state { return Err(OAuthError::State)}
+    if redirect_query_string.state != oauth_client.state {
+        return Err(OAuthError::State);
+    }
 
     let token_response = exchange_code(&oauth_client, &redirect_query_string.code)?;
 
     Ok(token_response.access_token)
 }
 
-fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenResponse, OAuthError> {
+fn exchange_code(
+    oauth_client: &OAuthClient,
+    code: &str,
+) -> Result<AccessTokenResponse, OAuthError> {
     let client = reqwest::blocking::Client::new();
     let form_data = [
         ("client_id", oauth_client.client_id),
@@ -42,7 +50,8 @@ fn exchange_code(oauth_client: &OAuthClient, code: &str) -> Result<AccessTokenRe
         .post(oauth_client.token_url)
         .basic_auth(oauth_client.client_id, Some(oauth_client.client_secret))
         .form(&form_data)
-        .send().unwrap();
+        .send()
+        .unwrap();
 
     let body = resp.text()?;
     println!("Body: {:?}", body);
@@ -81,7 +90,9 @@ fn read_redirect_query_string(stream: &TcpStream) -> Result<RedirectQueryString,
         } else {
             Err(OAuthError::RedirectParsing)
         }
-    } else { Err(OAuthError::RedirectParsing) }?;
+    } else {
+        Err(OAuthError::RedirectParsing)
+    }?;
     let query_string: RedirectQueryString = serde_qs::from_str(redirect_url).unwrap();
     Ok(query_string)
 }
