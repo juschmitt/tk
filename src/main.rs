@@ -4,6 +4,7 @@ use crate::cli::{AuthCommands, Cli, Commands, ProjectCommands};
 
 mod cli;
 mod oauth;
+mod file;
 
 fn main() -> io::Result<()> {
         match Cli::parse().command {
@@ -12,12 +13,17 @@ fn main() -> io::Result<()> {
                     AuthCommands::Login { client_id, client_secret } => {
                         let auth_token = oauth::authenticate(client_id.as_str(), client_secret.as_str());
                         match auth_token {
-                            Ok(auth_token) => { store_auth_token(auth_token); }
+                            Ok(auth_token) => { file::store_auth_token(auth_token)?; }
                             Err(error) => { eprintln!("Authentication failed! Cause: {:?}", error) }
                         }
                     }
-                    AuthCommands::Logout => {}
-                    AuthCommands::Token => {}
+                    AuthCommands::Logout => {
+                        file::store_auth_token("".to_string())?;
+                    }
+                    AuthCommands::Token => {
+                        let auth_token = file::read_auth_token()?;
+                        println!("Token: {}", auth_token);
+                    }
                 }
             }
             Commands::Project(args) => {
@@ -32,8 +38,4 @@ fn main() -> io::Result<()> {
             Commands::Task => {}
         }
     Ok(())
-}
-
-fn store_auth_token(auth_token: String) {
-    todo!("Store the auth token in a file");
 }
