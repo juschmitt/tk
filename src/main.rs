@@ -5,6 +5,7 @@ use crate::cli::{AuthCommands, Cli, Commands, ProjectCommands};
 mod cli;
 mod oauth;
 mod file;
+mod client;
 
 fn main() -> io::Result<()> {
         match Cli::parse().command {
