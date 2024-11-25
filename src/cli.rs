@@ -3,6 +3,7 @@ use clap::{Args, Parser, Subcommand};
 #[derive(Debug, Parser)]
 #[command(name = "tk")]
 #[command(about = "Unofficial ticktick.com CLI")]
+#[command(flatten_help = true)]
 pub(crate) struct Cli {
     #[command(subcommand)]
     pub command: Commands
@@ -11,10 +12,13 @@ pub(crate) struct Cli {
 #[derive(Debug, Subcommand)]
 pub enum Commands {
     /// Login, logout, and manage tokens
+    #[command(flatten_help = true)]
     Auth(AuthArgs),
     /// Manage projects
+    #[command(flatten_help = true)]
     Project(ProjectArgs),
     /// Manage tasks
+    #[command(flatten_help = true)]
     Task,
 }
 
@@ -27,11 +31,12 @@ pub struct AuthArgs {
 #[derive(Debug, Subcommand)]
 pub enum AuthCommands {
     /// Login to ticktick.com and store the token for future requests
+    #[command(arg_required_else_help = true)]
     Login {
         #[arg(short, long, required = true)]
-        client_id: String,
+        id: String,
         #[arg(short, long, required = true)]
-        client_secret: String
+        secret: String
     },
     /// Logout and remove the stored token
     Logout,
@@ -47,14 +52,23 @@ pub struct ProjectArgs {
 
 #[derive(Debug, Subcommand)]
 pub enum ProjectCommands {
-    /// List all projects
+    /// List all projects.
     List,
-    /// View a project and its tasks
-    View { id: String },
-    /// Set a project as the active
-    Set { id: String },
-    /// Create a new project
-    Create { name: String },
-    /// Delete a project
-    Delete { id: String },
+    /// View a project and its tasks. If no id is provided, choose the project to view interactively.
+    View { 
+        id: Option<String> 
+    },
+    /// Set a project as the active. If no id is provided, choose the project to set as active interactively.
+    Set {
+        id: Option<String>
+    },
+    /// Create a new project.
+    Create {
+        #[arg(short, long, required = true)]
+        name: String 
+    },
+    /// Delete a project. If no id is provided, choose the project to delete interactively.
+    Delete { 
+        id: Option<String> 
+    },
 }

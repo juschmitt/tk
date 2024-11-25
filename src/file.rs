@@ -14,6 +14,12 @@ pub fn read_auth_token() -> std::io::Result<String> {
     std::fs::read_to_string(auth_token_file)
 }
 
+pub fn store_active_project_id(id: String) -> std::io::Result<()> {
+    let tk_dir = get_tk_dir()?;
+    let active_project_file = tk_dir.join("active_project");
+    std::fs::write(active_project_file, id)
+}
+
 fn get_tk_dir() -> std::io::Result<PathBuf> {
     let home_dir = get_home_dir()?;
     let tk_dir = home_dir.join(".tk");

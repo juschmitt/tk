@@ -15,8 +15,8 @@ mod oauth_error;
 pub fn authenticate(client_id: &str, client_secret: &str) -> Result<String, OAuthError> {
     println!("Starting OAuth process...");
     let oauth_client = OAuthClient::new(
-        client_id,//"O2Mbd1j8nkD7NvNS1R",
-        client_secret,//"WxRy01)gJDnffZ#R)_Bza2230zY5T7B&",
+        "O2Mbd1j8nkD7NvNS1R",// client_id,
+        "WxRy01)gJDnffZ#R)_Bza2230zY5T7B&", // client_secret,
         "https://ticktick.com/oauth/authorize",
         "https://ticktick.com/oauth/token",
         "http://localhost:8080",
@@ -53,9 +53,7 @@ fn exchange_code(
         .send()?;
 
     let body = resp.text()?;
-    println!("Body: {:?}", body);
     let response: AccessTokenResponse = serde_json::from_str(&body)?;
-    println!("Response: {:?}", response);
     Ok(response)
 }
 

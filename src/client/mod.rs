@@ -1,11 +1,65 @@
 use crate::client::models::project::Project;
+use crate::client::models::project_data::ProjectData;
+use crate::file::read_auth_token;
 
 pub mod models;
 
-const BASE_URL: &str = "api.ticktick.com/open/v1/";
+const BASE_URL: &str = "https://api.ticktick.com/open/v1/";
 
-/// Load all projects for user
-pub fn list_projects() -> std::io::Result<Vec<Project>> {
-    todo!("Load all projects for user")
+#[derive(Debug)]
+pub struct TickTickClient {
+    http_client: reqwest::blocking::Client,
+    auth_header: String,
+    base_url: String,
 }
 
+impl TickTickClient {
+    pub fn new() -> std::io::Result<Self> {
+        let auth_header = format!("Bearer {}", read_auth_token()?);
+        let http_client = reqwest::blocking::Client::new();
+        Ok(TickTickClient {
+            http_client,
+            auth_header,
+            base_url: BASE_URL.to_string(),
+        })
+    }
+    /// Load all projects for user
+    pub fn list_projects(&self) -> std::io::Result<Vec<Project>> {
+        let response = self
+            .http_client
+            .get(format!("{}{}", self.base_url, "project"))
+            .header("Authorization", &self.auth_header)
+            .send()
+            .unwrap(); // todo: handle error cases.
+
+        let body = response.text().unwrap();
+        let projects: Vec<Project> = serde_json::from_str(&body)?;
+        Ok(projects)
+    }
+
+    /// Load a single project by id
+    pub fn get_project(&self, id: &str) -> std::io::Result<Project> {
+        let response = self.http_client
+            .get(format!("{}{}{}", self.base_url, "project/", id))
+            .header("Authorization", &self.auth_header)
+            .send()
+            .unwrap(); // todo: handle error cases.
+
+        let body = response.text().unwrap();
+        let project: Project = serde_json::from_str(&body)?;
+        Ok(project)
+    }
+    
+    /// Load project data by id
+    pub fn get_project_data(&self, id: &str) -> std::io::Result<ProjectData> {
+        let response = self.http_client
+            .get(format!("{}{}{}{}", self.base_url, "project/", id, "/data"))
+            .header("Authorization", &self.auth_header)
+            .send()
+            .unwrap(); // todo: handle error cases.
+
+        let body = response.text().unwrap();
+        let project_data: ProjectData = serde_json::from_str(&body)?;
+        Ok(project_data)
+    }
+}
