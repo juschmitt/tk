@@ -3,6 +3,7 @@ use crate::client::models::project::ProjectList;
 use clap::Parser;
 use client::TickTickClient;
 use std::io;
+use crate::client::models::task::TaskList;
 
 mod cli;
 mod client;
@@ -78,7 +79,12 @@ fn main() -> io::Result<()> {
             },
         },
         Commands::Task(args) => match args.command {
-            TaskCommands::List => {}
+            TaskCommands::List => {
+                let client = TickTickClient::new()?;
+                let project_id = file::read_active_project_id()?;
+                let tasks = TaskList(client.list_tasks(project_id.as_str())?);
+                println!("{}", tasks);
+            }
             TaskCommands::View { .. } => {}
             TaskCommands::New { .. } => {}
             TaskCommands::Edit { .. } => {}

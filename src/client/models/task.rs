@@ -22,6 +22,17 @@ pub struct Task {
     pub time_zone: Option<String>,
 }
 
+pub struct TaskList(pub Vec<Task>);
+
+impl Display for TaskList {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (idx, task) in self.0.iter().enumerate() {
+            writeln!(f, "({}) {}", idx, task)?;
+        }
+        Ok(())
+    }
+}
+
 impl Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{0:<30}| ID: {1:<10} |", self.title, self.id)

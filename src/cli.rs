@@ -17,7 +17,7 @@ pub enum Commands {
     /// Manage projects
     #[command(flatten_help = true)]
     Project(ProjectArgs),
-    /// Manage tasks
+    /// Manage tasks. All commands work with the active project. Use `tk project set` to set a project as active.
     #[command(flatten_help = true)]
     Task(TaskArgs),
 }

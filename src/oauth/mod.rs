@@ -15,8 +15,8 @@ mod oauth_error;
 pub fn authenticate(client_id: &str, client_secret: &str) -> Result<String, OAuthError> {
     println!("Starting OAuth process...");
     let oauth_client = OAuthClient::new(
-        "O2Mbd1j8nkD7NvNS1R",// client_id,
-        "WxRy01)gJDnffZ#R)_Bza2230zY5T7B&", // client_secret,
+        client_id,
+        client_secret,
         "https://ticktick.com/oauth/authorize",
         "https://ticktick.com/oauth/token",
         "http://localhost:8080",

@@ -2,6 +2,7 @@ use crate::client::models::project::Project;
 use crate::client::models::project_data::ProjectData;
 use crate::file::read_auth_token;
 use std::io::{Error, ErrorKind};
+use crate::client::models::task::Task;
 
 pub mod models;
 
@@ -101,5 +102,10 @@ impl TickTickClient {
                 ),
             ))
         }
+    }
+    
+    /// Load all tasks for a given project
+    pub fn list_tasks(&self, project_id: &str) -> std::io::Result<Vec<Task>> {
+        self.get_project_data(project_id).map(|data| data.tasks)
     }
 }
