@@ -1,4 +1,4 @@
-use crate::cli::{AuthCommands, Cli, Commands, ProjectCommands};
+use crate::cli::{AuthCommands, Cli, Commands, ProjectCommands, TaskCommands};
 use crate::client::models::project::ProjectList;
 use clap::Parser;
 use client::TickTickClient;
@@ -60,7 +60,7 @@ fn main() -> io::Result<()> {
                     file::store_active_project_id(id)?;
                 }
             }
-            ProjectCommands::Create { name } => {
+            ProjectCommands::New { name } => {
                 let client = TickTickClient::new()?;
                 let project = client.create_project(name.as_str())?;
                 println!("Project created: {}", project);
@@ -77,7 +77,13 @@ fn main() -> io::Result<()> {
                 }
             },
         },
-        Commands::Task => {}
+        Commands::Task(args) => match args.command {
+            TaskCommands::List => {}
+            TaskCommands::View { .. } => {}
+            TaskCommands::New { .. } => {}
+            TaskCommands::Edit { .. } => {}
+            TaskCommands::Delete { .. } => {}
+        }
     }
     Ok(())
 }
