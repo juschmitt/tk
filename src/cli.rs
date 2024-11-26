@@ -19,7 +19,7 @@ pub enum Commands {
     Project(ProjectArgs),
     /// Manage tasks
     #[command(flatten_help = true)]
-    Task,
+    Task(TaskArgs),
 }
 
 #[derive(Debug, Args)]
@@ -63,11 +63,40 @@ pub enum ProjectCommands {
         id: Option<String>
     },
     /// Create a new project.
-    Create {
+    New {
         #[arg(short, long, required = true)]
         name: String 
     },
     /// Delete a project. If no id is provided, choose the project to delete interactively.
+    Delete { 
+        id: Option<String> 
+    },
+}
+
+#[derive(Debug, Args)]
+pub struct TaskArgs {
+    #[command(subcommand)]
+    pub command: TaskCommands,
+}
+
+#[derive(Debug, Subcommand)]
+pub enum TaskCommands {
+    /// List all undone tasks of the active project.
+    List,
+    /// View a task. If no id is provided, choose the task to view interactively.
+    View { 
+        id: Option<String> 
+    },
+    /// Create a new task in the active project.
+    New {
+        #[arg(short, long, required = true)]
+        name: String 
+    },
+    /// Modify a task. If no id is provided, choose the task to modify interactively.
+    Edit { 
+        id: Option<String> 
+    },
+    /// Delete a task. If no id is provided, choose the task to delete interactively.
     Delete { 
         id: Option<String> 
     },
