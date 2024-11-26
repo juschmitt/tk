@@ -90,11 +90,16 @@ impl TickTickClient {
             .send()
             .unwrap(); // todo: handle error cases.
 
-        println!("{:?}", response);
         if response.status().is_success() {
             Ok(())
         } else {
-            Err(Error::new(ErrorKind::Other, "Failed to delete project"))
+            Err(Error::new(
+                ErrorKind::Other,
+                format!(
+                    "Failed to delete project. Response code: HTTP {}",
+                    response.status()
+                ),
+            ))
         }
     }
 }
