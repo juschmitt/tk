@@ -1,6 +1,7 @@
 use crate::client::models::project::Project;
 use crate::client::models::project_data::ProjectData;
 use crate::file::read_auth_token;
+use std::io::{Error, ErrorKind};
 
 pub mod models;
 
@@ -39,7 +40,8 @@ impl TickTickClient {
 
     /// Load a single project by id
     pub fn get_project(&self, id: &str) -> std::io::Result<Project> {
-        let response = self.http_client
+        let response = self
+            .http_client
             .get(format!("{}{}{}", self.base_url, "project/", id))
             .header("Authorization", &self.auth_header)
             .send()
@@ -49,10 +51,11 @@ impl TickTickClient {
         let project: Project = serde_json::from_str(&body)?;
         Ok(project)
     }
-    
+
     /// Load project data by id
     pub fn get_project_data(&self, id: &str) -> std::io::Result<ProjectData> {
-        let response = self.http_client
+        let response = self
+            .http_client
             .get(format!("{}{}{}{}", self.base_url, "project/", id, "/data"))
             .header("Authorization", &self.auth_header)
             .send()
@@ -61,5 +64,37 @@ impl TickTickClient {
         let body = response.text().unwrap();
         let project_data: ProjectData = serde_json::from_str(&body)?;
         Ok(project_data)
+    }
+
+    /// Create a new project with name
+    pub fn create_project(&self, name: &str) -> std::io::Result<Project> {
+        let response = self
+            .http_client
+            .post(format!("{}{}", self.base_url, "project"))
+            .header("Authorization", &self.auth_header)
+            .json(&serde_json::json!({ "name": name }))
+            .send()
+            .unwrap(); // todo: handle error cases.
+
+        let body = response.text().unwrap();
+        let project: Project = serde_json::from_str(&body)?;
+        Ok(project)
+    }
+
+    /// Delete a project by id
+    pub fn delete_project(&self, id: &str) -> std::io::Result<()> {
+        let response = self
+            .http_client
+            .delete(format!("{}{}{}", self.base_url, "project/", id))
+            .header("Authorization", &self.auth_header)
+            .send()
+            .unwrap(); // todo: handle error cases.
+
+        println!("{:?}", response);
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Error::new(ErrorKind::Other, "Failed to delete project"))
+        }
     }
 }

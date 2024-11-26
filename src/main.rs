@@ -2,7 +2,6 @@ use crate::cli::{AuthCommands, Cli, Commands, ProjectCommands};
 use crate::client::models::project::ProjectList;
 use clap::Parser;
 use client::TickTickClient;
-use std::fmt::{Display, Formatter};
 use std::io;
 
 mod cli;
@@ -18,6 +17,7 @@ fn main() -> io::Result<()> {
                 match auth_token {
                     Ok(auth_token) => {
                         file::store_auth_token(auth_token)?;
+                        println!("Authentication complete!")
                     }
                     Err(error) => {
                         eprintln!("Authentication failed! Cause: {:?}", error)
@@ -60,8 +60,22 @@ fn main() -> io::Result<()> {
                     file::store_active_project_id(id)?;
                 }
             }
-            ProjectCommands::Create { .. } => {}
-            ProjectCommands::Delete { .. } => {}
+            ProjectCommands::Create { name } => {
+                let client = TickTickClient::new()?;
+                let project = client.create_project(name.as_str())?;
+                println!("Project created: {}", project);
+            }
+            ProjectCommands::Delete { id } => {
+                let client = TickTickClient::new()?;
+                if let Some(id) = id {
+                    client.delete_project(id.as_str())?;
+                } else {
+                    let projects = ProjectList(client.list_projects()?);
+                    let id = prompt_user_to_select_project(&projects)?;
+                    let client = TickTickClient::new()?;
+                    client.delete_project(id.as_str())?;
+                }
+            },
         },
         Commands::Task => {}
     }
