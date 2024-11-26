@@ -3,6 +3,7 @@ use serde::{Deserialize, Serialize};
 use crate::client::models::checklist_item::ChecklistItem;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Task {
     pub id: String,
     pub title: String,

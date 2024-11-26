@@ -5,6 +5,7 @@ use crate::client::models::project::Project;
 use crate::client::models::task::Task;
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct ProjectData {
     pub project: Project,
     pub tasks: Vec<Task>,
