@@ -1,8 +1,8 @@
 use crate::client::models::project::Project;
 use crate::client::models::project_data::ProjectData;
+use crate::client::models::task::Task;
 use crate::file::read_auth_token;
 use std::io::{Error, ErrorKind};
-use crate::client::models::task::Task;
 
 pub mod models;
 
@@ -103,9 +103,41 @@ impl TickTickClient {
             ))
         }
     }
-    
+
     /// Load all tasks for a given project
     pub fn list_tasks(&self, project_id: &str) -> std::io::Result<Vec<Task>> {
         self.get_project_data(project_id).map(|data| data.tasks)
+    }
+
+    /// Create a new task with title in optional project
+    pub fn create_task(&self, project: Option<String>, title: &str) -> std::io::Result<()> {
+        let response = &self
+            .http_client
+            .post(format!("{}{}", self.base_url, "task"))
+            .header("Authorization", &self.auth_header)
+            .json(&serde_json::json!({
+                "title": title,
+                "projectId": project
+            }))
+            .send();
+        match response {
+            Ok(response) => {
+                if response.status().is_success() {
+                    Ok(())
+                } else {
+                    Err(Error::new(
+                        ErrorKind::Other,
+                        format!(
+                            "Failed to create task. Response code: HTTP {}",
+                            response.status()
+                        ),
+                    ))
+                }
+            }
+            Err(e) => Err(Error::new(
+                ErrorKind::Other,
+                format!("Failed to create task. Error: {}", e),
+            )),
+        }
     }
 }

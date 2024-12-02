@@ -61,6 +61,9 @@ fn main() -> io::Result<()> {
                     file::store_active_project_id(id)?;
                 }
             }
+            ProjectCommands::Unset => {
+                file::remove_active_project_id()?;
+            }
             ProjectCommands::New { name } => {
                 let client = TickTickClient::new()?;
                 let project = client.create_project(name.as_str())?;
@@ -86,7 +89,11 @@ fn main() -> io::Result<()> {
                 println!("{}", tasks);
             }
             TaskCommands::View { .. } => {}
-            TaskCommands::New { .. } => {}
+            TaskCommands::New { name } => {
+                let client = TickTickClient::new()?;
+                let project_id = file::read_active_project_id().ok();
+                client.create_task(project_id, name.as_str());
+            }
             TaskCommands::Edit { .. } => {}
             TaskCommands::Delete { .. } => {}
         }

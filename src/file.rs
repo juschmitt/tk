@@ -26,6 +26,12 @@ pub fn read_active_project_id() -> std::io::Result<String> {
     std::fs::read_to_string(active_project_file)
 }
 
+pub(crate) fn remove_active_project_id() -> std::io::Result<()> {
+    let tk_dir = get_tk_dir()?;
+    let active_project_file = tk_dir.join("active_project");
+    std::fs::remove_file(active_project_file)   
+}
+
 fn get_tk_dir() -> std::io::Result<PathBuf> {
     let home_dir = get_home_dir()?;
     let tk_dir = home_dir.join(".tk");
