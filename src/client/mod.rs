@@ -3,6 +3,7 @@ use crate::client::models::project_data::ProjectData;
 use crate::client::models::task::Task;
 use crate::file::read_auth_token;
 use std::io::{Error, ErrorKind};
+use reqwest::blocking::Response;
 
 pub mod models;
 
@@ -110,8 +111,8 @@ impl TickTickClient {
     }
 
     /// Create a new task with title in optional project
-    pub fn create_task(&self, project: Option<String>, title: &str) -> std::io::Result<()> {
-        let response = &self
+    pub fn create_task(self, project: Option<String>, title: &str) -> std::io::Result<Task> {
+        let response = self
             .http_client
             .post(format!("{}{}", self.base_url, "task"))
             .header("Authorization", &self.auth_header)
@@ -123,7 +124,9 @@ impl TickTickClient {
         match response {
             Ok(response) => {
                 if response.status().is_success() {
-                    Ok(())
+                    let body = response.text().unwrap();
+                    let task: Task = serde_json::from_str(&body)?;
+                    Ok(task)
                 } else {
                     Err(Error::new(
                         ErrorKind::Other,

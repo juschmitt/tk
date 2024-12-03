@@ -92,7 +92,8 @@ fn main() -> io::Result<()> {
             TaskCommands::New { name } => {
                 let client = TickTickClient::new()?;
                 let project_id = file::read_active_project_id().ok();
-                client.create_task(project_id, name.as_str())?;
+                let task = client.create_task(project_id, name.as_str())?;
+                println!("Task created: \n{}", task);
             }
             TaskCommands::Edit { .. } => {}
             TaskCommands::Delete { .. } => {}

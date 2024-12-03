@@ -85,7 +85,9 @@ pub struct TaskArgs {
 pub enum TaskCommands {
     /// List all undone tasks of the active project.
     List,
-    /// View a task. If no id is provided, choose the task to view interactively.
+    /// View a task from the active project. 
+    /// If no project is set, choose the project interactively.
+    /// If no id is provided, choose the task to view interactively.
     View { 
         id: Option<String> 
     },
