@@ -88,7 +88,25 @@ fn main() -> io::Result<()> {
                 let tasks = TaskList(client.list_tasks(project_id.as_str())?);
                 println!("{}", tasks);
             }
-            TaskCommands::View { .. } => {}
+            TaskCommands::View { id } => {
+                let project_id = if let Ok(project_id) = file::read_active_project_id() {
+                    project_id
+                } else {
+                    let client = TickTickClient::new()?;
+                    let projects = ProjectList(client.list_projects()?);
+                    prompt_user_to_select_project(&projects)?
+                };
+                let task_id = if let Some(id) = id {
+                    id
+                } else {
+                    let client = TickTickClient::new()?;
+                    let tasks = TaskList(client.list_tasks(project_id.as_str())?);
+                    prompt_user_to_select_task(&tasks)?
+                };
+                let client = TickTickClient::new()?;
+                let task = client.get_task(project_id, task_id)?;
+                println!("{}", task);
+            }
             TaskCommands::New { name } => {
                 let client = TickTickClient::new()?;
                 let project_id = file::read_active_project_id().ok();
@@ -110,6 +128,19 @@ fn prompt_user_to_select_project(projects: &ProjectList) -> io::Result<String> {
     let index = input.trim().parse::<usize>();
     if let Ok(index) = index {
         Ok(projects.0.get(index).unwrap().id.clone())
+    } else {
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid input"))
+    }
+}
+
+fn prompt_user_to_select_task(tasks: &TaskList) -> io::Result<String> {
+    println!("{}", tasks);
+    println!("Choose a task by entering its index:");
+    let mut input = String::new();
+    io::stdin().read_line(&mut input)?;
+    let index = input.trim().parse::<usize>();
+    if let Ok(index) = index {
+        Ok(tasks.0.get(index).unwrap().id.clone())
     } else {
         Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid input"))
     }

@@ -143,4 +143,18 @@ impl TickTickClient {
             )),
         }
     }
+
+    /// Load a single task by project and task id
+    pub fn get_task(&self, project_id: String, task_id: String) -> std::io::Result<Task> {
+        let response = self
+            .http_client
+            .get(format!("{}{}{}{}{}", self.base_url, "project/", project_id, "/task/", task_id))
+            .header("Authorization", &self.auth_header)
+            .send()
+            .unwrap(); // todo: handle error cases.
+
+        let body = response.text().unwrap();
+        let task: Task = serde_json::from_str(&body)?;
+        Ok(task)
+    }
 }
