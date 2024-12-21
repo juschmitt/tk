@@ -96,7 +96,9 @@ pub enum TaskCommands {
         #[arg(short, long, required = true)]
         name: String 
     },
-    /// Modify a task. If no id is provided, choose the task to modify interactively.
+    /// Modify a task from the active project using the editor set in $EDITOR.
+    /// If no project is set, choose the project interactively.
+    /// If no id is provided, choose the task to edit interactively.
     Edit { 
         id: Option<String> 
     },

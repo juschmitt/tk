@@ -111,14 +111,14 @@ impl TickTickClient {
     }
 
     /// Create a new task with title in optional project
-    pub fn create_task(self, project: Option<String>, title: &str) -> std::io::Result<Task> {
+    pub fn create_task(self, project_id: Option<String>, title: &str) -> std::io::Result<Task> {
         let response = self
             .http_client
             .post(format!("{}{}", self.base_url, "task"))
             .header("Authorization", &self.auth_header)
             .json(&serde_json::json!({
                 "title": title,
-                "projectId": project
+                "projectId": project_id
             }))
             .send();
         match response {
@@ -145,7 +145,7 @@ impl TickTickClient {
     }
 
     /// Load a single task by project and task id
-    pub fn get_task(&self, project_id: String, task_id: String) -> std::io::Result<Task> {
+    pub fn get_task(&self, project_id: &str, task_id: &str) -> std::io::Result<Task> {
         let response = self
             .http_client
             .get(format!(
@@ -170,9 +170,9 @@ impl TickTickClient {
         let task: Task = serde_json::from_str(&body)?;
         Ok(task)
     }
-    
+
     /// Delete a task by project and task id
-    pub fn delete_task(&self, project_id: String, task_id: String) -> std::io::Result<()> {
+    pub fn delete_task(&self, project_id: &str, task_id: &str) -> std::io::Result<()> {
         let response = self
             .http_client
             .delete(format!(
@@ -199,5 +199,33 @@ impl TickTickClient {
                 ),
             ))
         }
+    }
+
+    /// Update a task by project and task id
+    pub fn update_task(&self, project_id: String, task: Task) -> std::io::Result<Task> {
+        let response = self
+            .http_client
+            .put(format!(
+                "{}{}{}{}{}",
+                self.base_url, "project/", project_id, "/task/", task.id
+            ))
+            .header("Authorization", &self.auth_header)
+            .json(&task)
+            .send()
+            .map_err(|e| {
+                Error::new(
+                    ErrorKind::Other,
+                    format!("Failed to update task. Error: {}", e),
+                )
+            })?;
+
+        let body = response.text().map_err(|e| {
+            Error::new(
+                ErrorKind::Other,
+                format!("Failed to update task. Error: {}", e),
+            )
+        })?;
+        let task: Task = serde_json::from_str(&body)?;
+        Ok(task)
     }
 }
