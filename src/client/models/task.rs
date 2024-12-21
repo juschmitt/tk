@@ -28,7 +28,7 @@ pub struct TaskList(pub Vec<Task>);
 impl Display for TaskList {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (idx, task) in self.0.iter().enumerate() {
-            writeln!(f, "({}) {}", idx, task)?;
+            writeln!(f, "({0}) {1:<30}| ID: {2:<10} |", idx, task.title, task.id)?;
         }
         Ok(())
     }
@@ -36,6 +36,18 @@ impl Display for TaskList {
 
 impl Display for Task {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{0:<30}| ID: {1:<10} |", self.title, self.id)
+        writeln!(f, "ID: {}", self.id)?;
+        writeln!(f, "Title: {}", self.title)?;
+        if let Some(due_date) = &self.due_date {
+            writeln!(f, "Due Date: {}", due_date)?;
+        }
+        writeln!(f, "---------------")?;
+        if let Some(desc) = &self.desc {
+            writeln!(f, "Description: {}", desc)?;
+        }
+        if let Some(content) = &self.content {
+            writeln!(f, "Content: {}", content)?;
+        }
+        Ok(())
     }
 }
