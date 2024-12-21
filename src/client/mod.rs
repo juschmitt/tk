@@ -2,8 +2,8 @@ use crate::client::models::project::Project;
 use crate::client::models::project_data::ProjectData;
 use crate::client::models::task::Task;
 use crate::file::read_auth_token;
-use std::io::{Error, ErrorKind};
 use reqwest::blocking::Response;
+use std::io::{Error, ErrorKind};
 
 pub mod models;
 
@@ -148,12 +148,25 @@ impl TickTickClient {
     pub fn get_task(&self, project_id: String, task_id: String) -> std::io::Result<Task> {
         let response = self
             .http_client
-            .get(format!("{}{}{}{}{}", self.base_url, "project/", project_id, "/task/", task_id))
+            .get(format!(
+                "{}{}{}{}{}",
+                self.base_url, "project/", project_id, "/task/", task_id
+            ))
             .header("Authorization", &self.auth_header)
             .send()
-            .unwrap(); // todo: handle error cases.
+            .map_err(|e| {
+                Error::new(
+                    ErrorKind::Other,
+                    format!("Failed to get task. Error: {}", e),
+                )
+            })?;
 
-        let body = response.text().unwrap();
+        let body = response.text().map_err(|e| {
+            Error::new(
+                ErrorKind::Other,
+                format!("Failed to get task. Error: {}", e),
+            )
+        })?;
         let task: Task = serde_json::from_str(&body)?;
         Ok(task)
     }
