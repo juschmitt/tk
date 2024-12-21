@@ -170,4 +170,34 @@ impl TickTickClient {
         let task: Task = serde_json::from_str(&body)?;
         Ok(task)
     }
+    
+    /// Delete a task by project and task id
+    pub fn delete_task(&self, project_id: String, task_id: String) -> std::io::Result<()> {
+        let response = self
+            .http_client
+            .delete(format!(
+                "{}{}{}{}{}",
+                self.base_url, "project/", project_id, "/task/", task_id
+            ))
+            .header("Authorization", &self.auth_header)
+            .send()
+            .map_err(|e| {
+                Error::new(
+                    ErrorKind::Other,
+                    format!("Failed to delete task. Error: {}", e),
+                )
+            })?;
+
+        if response.status().is_success() {
+            Ok(())
+        } else {
+            Err(Error::new(
+                ErrorKind::Other,
+                format!(
+                    "Failed to delete task. Response code: HTTP {}",
+                    response.status()
+                ),
+            ))
+        }
+    }
 }

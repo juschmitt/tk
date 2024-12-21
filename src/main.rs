@@ -114,7 +114,28 @@ fn main() -> io::Result<()> {
                 println!("Task created: \n{}", task);
             }
             TaskCommands::Edit { .. } => {}
-            TaskCommands::Delete { .. } => {}
+            TaskCommands::Delete { id } => {
+                let project_id = if let Ok(project_id) = file::read_active_project_id() {
+                    project_id
+                } else {
+                    let client = TickTickClient::new()?;
+                    let projects = ProjectList(client.list_projects()?);
+                    prompt_user_to_select_project(&projects)?
+                };
+                let task_id = if let Some(id) = id {
+                    id
+                } else {
+                    let client = TickTickClient::new()?;
+                    let tasks = TaskList(client.list_tasks(project_id.as_str())?);
+                    prompt_user_to_select_task(&tasks)?
+                };
+                let client = TickTickClient::new()?;
+                if let Err(err) = client.delete_task(project_id, task_id) {
+                    eprintln!("Failed to delete task. Cause: {:?}", err);
+                } else {
+                    println!("Task deleted.");
+                }
+            }
         }
     }
     Ok(())

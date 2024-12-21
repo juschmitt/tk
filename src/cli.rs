@@ -100,7 +100,9 @@ pub enum TaskCommands {
     Edit { 
         id: Option<String> 
     },
-    /// Delete a task. If no id is provided, choose the task to delete interactively.
+    /// Delete a task from the active project.
+    /// If no project is set, choose the project interactively.
+    /// If no id is provided, choose the task to delete interactively.
     Delete { 
         id: Option<String> 
     },
