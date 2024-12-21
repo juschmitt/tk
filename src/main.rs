@@ -83,9 +83,15 @@ fn main() -> io::Result<()> {
         },
         Commands::Task(args) => match args.command {
             TaskCommands::List => {
+                let project_id = if let Ok(project_id) = file::read_active_project_id() {
+                    project_id
+                } else {
+                    let client = TickTickClient::new()?;
+                    let projects = ProjectList(client.list_projects()?);
+                    prompt_user_to_select_project(&projects)?
+                };
                 let client = TickTickClient::new()?;
-                let project_id = file::read_active_project_id()?;
-                let tasks = TaskList(client.list_tasks(project_id.as_str())?);
+                let tasks = TaskList(client.list_tasks(&project_id)?);
                 println!("{}", tasks);
             }
             TaskCommands::View { id } => {

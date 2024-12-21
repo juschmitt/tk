@@ -84,6 +84,7 @@ pub struct TaskArgs {
 #[derive(Debug, Subcommand)]
 pub enum TaskCommands {
     /// List all undone tasks of the active project.
+    /// If no project is set, choose the project interactively.
     List,
     /// View a task from the active project. 
     /// If no project is set, choose the project interactively.
