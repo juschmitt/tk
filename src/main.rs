@@ -83,32 +83,14 @@ fn main() -> io::Result<()> {
         },
         Commands::Task(args) => match args.command {
             TaskCommands::List => {
-                let project_id = if let Ok(project_id) = file::read_active_project_id() {
-                    project_id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let projects = ProjectList(client.list_projects()?);
-                    prompt_user_to_select_project(&projects)?
-                };
+                let project_id = get_project_id()?;
                 let client = TickTickClient::new()?;
                 let tasks = TaskList(client.list_tasks(&project_id)?);
                 println!("{}", tasks);
             }
             TaskCommands::View { id } => {
-                let project_id = if let Ok(project_id) = file::read_active_project_id() {
-                    project_id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let projects = ProjectList(client.list_projects()?);
-                    prompt_user_to_select_project(&projects)?
-                };
-                let task_id = if let Some(id) = id {
-                    id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let tasks = TaskList(client.list_tasks(project_id.as_str())?);
-                    prompt_user_to_select_task(&tasks)?
-                };
+                let project_id = get_project_id()?;
+                let task_id = get_task_id(id, &project_id)?;
                 let client = TickTickClient::new()?;
                 let task = client.get_task(&project_id, &task_id)?;
                 println!("{}", task);
@@ -120,20 +102,8 @@ fn main() -> io::Result<()> {
                 println!("Task created: \n{}", task);
             }
             TaskCommands::Edit { id } => {
-                let project_id = if let Ok(project_id) = file::read_active_project_id() {
-                    project_id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let projects = ProjectList(client.list_projects()?);
-                    prompt_user_to_select_project(&projects)?
-                };
-                let task_id = if let Some(id) = id {
-                    id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let tasks = TaskList(client.list_tasks(project_id.as_str())?);
-                    prompt_user_to_select_task(&tasks)?
-                };
+                let project_id = get_project_id()?;
+                let task_id = get_task_id(id, &project_id)?;
                 let client = TickTickClient::new()?;
                 let task = client.get_task(&project_id, &task_id)?;
                 let updated_task = update_task_with_editor(&task)?;
@@ -141,20 +111,8 @@ fn main() -> io::Result<()> {
                 println!("Task updated: \n{}", task);
             }
             TaskCommands::Delete { id } => {
-                let project_id = if let Ok(project_id) = file::read_active_project_id() {
-                    project_id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let projects = ProjectList(client.list_projects()?);
-                    prompt_user_to_select_project(&projects)?
-                };
-                let task_id = if let Some(id) = id {
-                    id
-                } else {
-                    let client = TickTickClient::new()?;
-                    let tasks = TaskList(client.list_tasks(project_id.as_str())?);
-                    prompt_user_to_select_task(&tasks)?
-                };
+                let project_id = get_project_id()?;
+                let task_id = get_task_id(id, &project_id)?;
                 let client = TickTickClient::new()?;
                 if let Err(err) = client.delete_task(&project_id, &task_id) {
                     eprintln!("Failed to delete task. Cause: {:?}", err);
@@ -167,12 +125,21 @@ fn main() -> io::Result<()> {
     Ok(())
 }
 
-/// Update a task using the user's default editor.
 fn update_task_with_editor(task: &Task) -> io::Result<Task> {
     let task_str = serde_json::to_string_pretty(&task)?;
     let updated_task_str = edit::edit(task_str.as_str())?;
     serde_json::from_str(updated_task_str.as_str())
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+}
+
+fn get_project_id() -> io::Result<String> {
+    if let Ok(project_id) = file::read_active_project_id() {
+        Ok(project_id)
+    } else {
+        let client = TickTickClient::new()?;
+        let projects = ProjectList(client.list_projects()?);
+        prompt_user_to_select_project(&projects)
+    }
 }
 
 fn prompt_user_to_select_project(projects: &ProjectList) -> io::Result<String> {
@@ -184,7 +151,17 @@ fn prompt_user_to_select_project(projects: &ProjectList) -> io::Result<String> {
     if let Ok(index) = index {
         Ok(projects.0.get(index).unwrap().id.clone())
     } else {
-        Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid input"))
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid project index!"))
+    }
+}
+
+fn get_task_id(id: Option<String>, project_id: &str) -> io::Result<String> {
+    if let Some(id) = id {
+        Ok(id)
+    } else {
+        let client = TickTickClient::new()?;
+        let tasks = TaskList(client.list_tasks(project_id)?);
+        prompt_user_to_select_task(&tasks)
     }
 }
 
@@ -197,6 +174,6 @@ fn prompt_user_to_select_task(tasks: &TaskList) -> io::Result<String> {
     if let Ok(index) = index {
         Ok(tasks.0.get(index).unwrap().id.clone())
     } else {
-        Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid input"))
+        Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid task index!"))
     }
 }
