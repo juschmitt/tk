@@ -71,12 +71,11 @@ fn main() -> io::Result<()> {
             }
             ProjectCommands::Delete { id } => {
                 let client = TickTickClient::new()?;
-                if let Some(id) = id {
+                if let Some(id) = id { 
                     client.delete_project(id.as_str())?;
                 } else {
                     let projects = ProjectList(client.list_projects()?);
                     let id = prompt_user_to_select_project(&projects)?;
-                    let client = TickTickClient::new()?;
                     client.delete_project(id.as_str())?;
                 }
             }

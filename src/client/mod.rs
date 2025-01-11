@@ -2,7 +2,6 @@ use crate::client::models::project::Project;
 use crate::client::models::project_data::ProjectData;
 use crate::client::models::task::Task;
 use crate::file::read_auth_token;
-use reqwest::blocking::Response;
 use std::io::{Error, ErrorKind};
 
 pub mod models;
@@ -38,20 +37,6 @@ impl TickTickClient {
         let body = response.text().unwrap();
         let projects: Vec<Project> = serde_json::from_str(&body)?;
         Ok(projects)
-    }
-
-    /// Load a single project by id
-    pub fn get_project(&self, id: &str) -> std::io::Result<Project> {
-        let response = self
-            .http_client
-            .get(format!("{}{}{}", self.base_url, "project/", id))
-            .header("Authorization", &self.auth_header)
-            .send()
-            .unwrap(); // todo: handle error cases.
-
-        let body = response.text().unwrap();
-        let project: Project = serde_json::from_str(&body)?;
-        Ok(project)
     }
 
     /// Load project data by id
