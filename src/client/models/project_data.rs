@@ -2,7 +2,7 @@ use std::fmt::Display;
 use serde::{Deserialize, Serialize};
 use crate::client::models::column::Column;
 use crate::client::models::project::Project;
-use crate::client::models::task::Task;
+use crate::client::models::task::{Task, TaskList};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -16,9 +16,7 @@ impl Display for ProjectData {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.project)?;
         writeln!(f, "Tasks:")?;
-        for task in &self.tasks {
-            writeln!(f, "{}", task)?;
-        }
+        writeln!(f, "{}", TaskList(&self.tasks))?;
         writeln!(f, "Columns:")?;
         for column in &self.columns {
             writeln!(f, "{}", column)?;

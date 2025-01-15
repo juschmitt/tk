@@ -84,8 +84,9 @@ fn main() -> io::Result<()> {
             TaskCommands::List => {
                 let project_id = get_project_id()?;
                 let client = TickTickClient::new()?;
-                let tasks = TaskList(client.list_tasks(&project_id)?);
-                println!("{}", tasks);
+                let tasks = &client.list_tasks(&project_id)?;
+                let task_list = TaskList(tasks);
+                println!("{}", task_list);
             }
             TaskCommands::View { id } => {
                 let project_id = get_project_id()?;
@@ -159,7 +160,8 @@ fn get_task_id(id: Option<String>, project_id: &str) -> io::Result<String> {
         Ok(id)
     } else {
         let client = TickTickClient::new()?;
-        let tasks = TaskList(client.list_tasks(project_id)?);
+        let tasks = &client.list_tasks(project_id)?;
+        let tasks = TaskList(tasks);
         prompt_user_to_select_task(&tasks)
     }
 }

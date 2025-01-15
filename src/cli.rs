@@ -92,7 +92,8 @@ pub enum TaskCommands {
     View { 
         id: Option<String> 
     },
-    /// Create a new task in the active project. If no project is set, the task will be added to inbox.
+    /// Create a new task in the active project. 
+    /// If no project is set, the task will be added to inbox.
     New {
         #[arg(short, long, required = true)]
         name: String 
