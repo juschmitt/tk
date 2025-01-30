@@ -33,6 +33,8 @@ To create a new task, use the following command:
 ```sh
 tk task new --name "Buy milk"
 ```
+### GetH Help
+Enter `tk` without any command to see the help. 
 
 ## Configuration
 For editing tasks the $EDITOR environment variable is used. 
